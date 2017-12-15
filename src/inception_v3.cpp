@@ -20,14 +20,19 @@ InceptionV3::InceptionV3(
   bool enable_nhwc)
 {
   // initialization
+  // TODO:
+  //   if enable_nhwc = true
+  //   src_dims should be DimsHWC instead of DimsCHW
   src_dims = nvinfer1::DimsCHW(src_c, src_h, src_w);
   max_batch = src_n;
   parser = nvuffparser::createUffParser();
   assert(parser);
-  parser->registerInput(src_node_name.c_str(), src_dims,
+  auto ok = parser->registerInput(src_node_name.c_str(), src_dims,
     (enable_nhwc) ? nvuffparser::UffInputOrder::kNHWC :
     nvuffparser::UffInputOrder::kNCHW);
-  parser->registerOutput(dst_node_name.c_str());
+  assert(ok);
+  ok = parser->registerOutput(dst_node_name.c_str());
+  assert(ok);
   engine = create_engine(uff_fn.c_str(), src_n, *parser, enable_fp16);
   assert(engine);
   context = engine->createExecutionContext();
