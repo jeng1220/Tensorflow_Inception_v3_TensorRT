@@ -40,14 +40,14 @@ private:
     nvinfer1::DataType type;
   };
 
-  std::vector<InferBuff> buffs;
-  nvuffparser::IUffParser* parser      = nullptr;
-  nvinfer1::ICudaEngine* engine        = nullptr;
-  nvinfer1::IExecutionContext* context = nullptr;
-  nvinfer1::DimsCHW src_dims;
-  int src_buff_idx = 0;
-  int dst_buff_idx = 0;
-  int max_batch    = 0;
+  std::vector<InferBuff> m_buffs;
+  nvuffparser::IUffParser* m_parser      = nullptr;
+  nvinfer1::ICudaEngine* m_engine        = nullptr;
+  nvinfer1::IExecutionContext* m_context = nullptr;
+  nvinfer1::DimsCHW m_src_dims;
+  int m_src_buff_idx = 0;
+  int m_dst_buff_idx = 0;
+  int m_max_batch    = 0;
 
   nvinfer1::ICudaEngine* create_engine(const char* uff_fn,
     int max_batch, nvuffparser::IUffParser& parser, bool enable_fp16);

@@ -23,55 +23,55 @@ InceptionV3::InceptionV3(
   // TODO:
   //   if enable_nhwc = true
   //   src_dims should be DimsHWC instead of DimsCHW
-  src_dims = nvinfer1::DimsCHW(src_c, src_h, src_w);
-  max_batch = src_n;
-  parser = nvuffparser::createUffParser();
-  assert(parser);
-  auto ok = parser->registerInput(src_node_name.c_str(), src_dims,
+  m_src_dims = nvinfer1::DimsCHW(src_c, src_h, src_w);
+  m_max_batch = src_n;
+  m_parser = nvuffparser::createUffParser();
+  assert(m_parser);
+  auto ok = m_parser->registerInput(src_node_name.c_str(), m_src_dims,
     (enable_nhwc) ? nvuffparser::UffInputOrder::kNHWC :
     nvuffparser::UffInputOrder::kNCHW);
   assert(ok);
-  ok = parser->registerOutput(dst_node_name.c_str());
+  ok = m_parser->registerOutput(dst_node_name.c_str());
   assert(ok);
-  engine = create_engine(uff_fn.c_str(), src_n, *parser, enable_fp16);
-  assert(engine);
-  context = engine->createExecutionContext();
-  assert(context);
+  m_engine = create_engine(uff_fn.c_str(), src_n, *m_parser, enable_fp16);
+  assert(m_engine);
+  m_context = m_engine->createExecutionContext();
+  assert(m_context);
   // after creating engine, parser is no-use (?
-  parser->destroy();
-  parser = nullptr;
+  m_parser->destroy();
+  m_parser = nullptr;
   // buffer allocation
-  buffs = create_buffers(*engine, src_n);
+  m_buffs = create_buffers(*m_engine, src_n);
 }
 
 InceptionV3::~InceptionV3(void)
 {
-  release_buffers(buffs);
-  if (context)  context->destroy();
-  if (parser)   parser->destroy();
-  if (engine)   engine->destroy();
+  release_buffers(m_buffs);
+  if (m_context)  m_context->destroy();
+  if (m_parser)   m_parser->destroy();
+  if (m_engine)   m_engine->destroy();
   nvuffparser::shutdownProtobufLibrary();
 }
 
 uint64_t InceptionV3::get_src_count(void)
 {
-  return buffs[src_buff_idx].count / max_batch;
+  return m_buffs[m_src_buff_idx].count / m_max_batch;
 }
 
 uint64_t InceptionV3::get_dst_count(void)
 {
-  return buffs[dst_buff_idx].count / max_batch;
+  return m_buffs[m_dst_buff_idx].count / m_max_batch;
 }
 
 void InceptionV3::set_src_buffer(const std::vector<float>& host_buff, int batch)
 {
-  assert(batch <= max_batch);
+  assert(batch <= m_max_batch);
   auto src_count = host_buff.size();
   auto copy_count = this->get_src_count() * batch;
   assert(src_count >= copy_count);
   const void* host_ptr = reinterpret_cast<const void*>(host_buff.data());
   auto copy_size = copy_count * sizeof(float);
-  auto& ref_buff = buffs[src_buff_idx];
+  auto& ref_buff = m_buffs[m_src_buff_idx];
   assert(copy_size <= ref_buff.size);
   auto error = cudaMemcpy(ref_buff.ptr, host_ptr, copy_size, cudaMemcpyHostToDevice);
   assert(error == cudaSuccess);
@@ -79,14 +79,14 @@ void InceptionV3::set_src_buffer(const std::vector<float>& host_buff, int batch)
 
 float InceptionV3::inference(int batch)
 {
-  assert(batch <= max_batch);
+  assert(batch <= m_max_batch);
   std::vector<void*> ptrs;
-  for (auto& buff : buffs)
+  for (auto& buff : m_buffs)
   {
     ptrs.push_back(buff.ptr);
   }
   auto start = std::chrono::high_resolution_clock::now();
-  auto ok = context->execute(batch, reinterpret_cast<void**>(ptrs.data()));
+  auto ok = m_context->execute(batch, reinterpret_cast<void**>(ptrs.data()));
   auto end = std::chrono::high_resolution_clock::now();
   auto ms = std::chrono::duration<float, std::milli>(end - start).count();
   assert(ok == true);
@@ -95,8 +95,8 @@ float InceptionV3::inference(int batch)
 
 void InceptionV3::get_dst_buffer(std::vector<float>& host_buff, int batch)
 {
-  assert(batch <= max_batch);
-  auto& ref_buff = buffs[dst_buff_idx];
+  assert(batch <= m_max_batch);
+  auto& ref_buff = m_buffs[m_dst_buff_idx];
   auto copy_count = this->get_dst_count() * batch;
   assert(host_buff.size() >= copy_count);
   auto copy_size  = copy_count * sizeof(float);
@@ -135,10 +135,10 @@ std::vector<InceptionV3::InferBuff> InceptionV3::create_buffers(
   for (auto i = 0; i < nb_bindings; ++i)
   {
     if ( engine.bindingIsInput(i) ) {
-      src_buff_idx = i;
+      m_src_buff_idx = i;
     }
     else {
-      dst_buff_idx = i;
+      m_dst_buff_idx = i;
     }
     InceptionV3::InferBuff buff;
     auto dims  = engine.getBindingDimensions(i);
