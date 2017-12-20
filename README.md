@@ -1,4 +1,4 @@
-This is a simple demonstration for running inception v3 network model on TensorRT
+This is a simple demonstration for running Tensorflow inception v3 model on TensorRT
 
 ### Requirement ###
 * TensorRT 3.0 GA
