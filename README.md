@@ -5,6 +5,18 @@ This is a simple demonstration for running Tensorflow inception v3 model on Tens
 * cuDNN 7 for CUDA 9.0
 * Cmake 3.8 (natively support CUDA, refer to "https://devblogs.nvidia.com/parallelforall/building-cuda-applications-cmake/")
 
+### Environment Variables ###
+```shell
+export PATH=/usr/local/cuda/bin:$PATH
+
+CUDA_LIB=/usr/local/cuda/lib64
+export LIBRARY_PATH=$CUDA_LIB:$LIBRARY_PATH
+export LD_LIBRARY_PATH=$CUDA_LIB:$LD_LIBRARY_PATH
+
+CUDA_INC=/usr/local/cuda/include:/usr/local/cuda/samples/common/inc
+export C_INCLUDE_PATH=$CUDA_INC:$C_INCLUDE_PATH
+export CPLUS_INCLUDE_PATH=$CUDA_INC:$CPLUS_INCLUDE_PATH
+```
 
 ### Build ###
 ```shell
