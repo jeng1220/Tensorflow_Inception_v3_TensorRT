@@ -43,6 +43,9 @@ $ wget "https://storage.googleapis.com/download.tensorflow.org/models/inception_
 $ tar zxvf inception_v3_2016_08_28_frozen.pb.tar.gz
 ```
 2. Then, follow instructions from TensorRT User Guide to convert pb file to UFF file.
+```shell
+python3 /usr/lib/python3.5/dist-packages/uff/bin/convert_to_uff.py tensorflow --input-file inception_v3_2016_08_28_frozen.pb -o inception_v3.uff -O InceptionV3/Predictions/Reshape_1
+```
 
 #### Prepare PPM Image ####
 PPM images as input image format can be referred to "https://en.wikipedia.org/wiki/Netpbm_format" .
